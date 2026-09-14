@@ -44,7 +44,7 @@ class SearchController extends Controller
                 ->get();
         }
 
-        return view('search', compact(
+        return view('vistas.search', compact(
             'search',
             'courses',
             'teachers',

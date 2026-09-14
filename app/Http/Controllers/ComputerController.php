@@ -34,15 +34,22 @@ class ComputerController extends Controller
 }
 
     public function store(Request $request){ 
-     $computer = Computer::create($request->all());
-     //ADJUNTAR EL PDF
-         $file=$request->file("urlFoto");
+     $request->validate([
+         'number' => 'required|string|max:255',
+         'brand' => 'nullable|string|max:255',
+         'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+     ]);
 
-         $nombreArchivo = "foto_".time().".".$file->guessExtension();
-         $request->file('urlFoto')->storeAs('public/images', $nombreArchivo );
+     $data = $request->only(['number', 'brand']);
 
-         $computer->urlFoto = $nombreArchivo;
-         $computer->save();
+     if ($request->hasFile('urlFoto')) {
+         $file = $request->file('urlFoto');
+         $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
+         $file->storeAs('public/images', $nombreArchivo);
+         $data['urlFoto'] = $nombreArchivo;
+     }
+
+     Computer::create($data);
 
      return redirect()->route('computer.index')->with('success', 'Computadora creada correctamente.');
 }
@@ -64,5 +71,68 @@ class ComputerController extends Controller
      return redirect()->route('computer.index')->with('success','Computadora eliminada.');
 }
 
+ public function apiIndex()
+ {
+     return response()->json(Computer::all());
+ }
+
+ public function apiShow($id)
+ {
+     return response()->json(Computer::findOrFail($id));
+ }
+
+ public function apiStore(Request $request)
+ {
+     $request->validate([
+         'number' => 'required|string|max:255',
+         'brand' => 'nullable|string|max:255',
+         'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+     ]);
+
+     $data = $request->only(['number', 'brand']);
+
+     if ($request->hasFile('urlFoto')) {
+         $file = $request->file('urlFoto');
+         $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
+         $file->storeAs('public/images', $nombreArchivo);
+         $data['urlFoto'] = $nombreArchivo;
+     }
+
+     $computer = Computer::create($data);
+
+     return response()->json($computer, 201);
+ }
+
+ public function apiUpdate(Request $request, $id)
+ {
+     $computer = Computer::findOrFail($id);
+
+     $request->validate([
+         'number' => 'sometimes|required|string|max:255',
+         'brand' => 'nullable|string|max:255',
+         'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+     ]);
+
+     $data = $request->only(['number', 'brand']);
+
+     if ($request->hasFile('urlFoto')) {
+         $file = $request->file('urlFoto');
+         $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
+         $file->storeAs('public/images', $nombreArchivo);
+         $data['urlFoto'] = $nombreArchivo;
+     }
+
+     $computer->update($data);
+
+     return response()->json($computer->fresh());
+ }
+
+ public function apiDestroy($id)
+ {
+     $computer = Computer::findOrFail($id);
+     $computer->delete();
+
+     return response()->json(['message' => 'Computadora eliminada correctamente.']);
+ }
 
 }

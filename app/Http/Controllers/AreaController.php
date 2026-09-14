@@ -31,16 +31,21 @@ class AreaController extends Controller
 }
 
   public function store(Request $request){
-    $area = Area::create($request->all());
-        //ADJUNTAR EL PDF
-         $file=$request->file("urlFoto");
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+    ]);
 
-         $nombreArchivo = "foto_".time().".".$file->guessExtension();
-         $request->file('urlFoto')->storeAs('public/images', $nombreArchivo );
+    $data = $request->only(['name']);
 
-         $area->urlFoto = $nombreArchivo;
-         $area->save();
-  
+    if ($request->hasFile('urlFoto')) {
+        $file = $request->file('urlFoto');
+        $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
+        $file->storeAs('public/images', $nombreArchivo);
+        $data['urlFoto'] = $nombreArchivo;
+    }
+
+    $area = Area::create($data);
 
     return redirect()->route('area.index')->with('success', 'Área creada correctamente.');
 }
@@ -60,6 +65,67 @@ class AreaController extends Controller
     $area = Area::findOrFail($id);
     $area->delete();
     return redirect()->route('area.index')->with('success', 'Área eliminada.');
+  }
+
+  public function apiIndex()
+  {
+      return response()->json(Area::all());
+  }
+
+  public function apiShow($id)
+  {
+      return response()->json(Area::findOrFail($id));
+  }
+
+  public function apiStore(Request $request)
+  {
+      $request->validate([
+          'name' => 'required|string|max:255|unique:areas,name',
+          'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+      ]);
+
+      $data = $request->only(['name']);
+
+      if ($request->hasFile('urlFoto')) {
+          $file = $request->file('urlFoto');
+          $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
+          $file->storeAs('public/images', $nombreArchivo);
+          $data['urlFoto'] = $nombreArchivo;
+      }
+
+      $area = Area::create($data);
+
+      return response()->json($area, 201);
+  }
+
+  public function apiUpdate(Request $request, $id)
+  {
+      $area = Area::findOrFail($id);
+
+      $request->validate([
+          'name' => 'sometimes|required|string|max:255|unique:areas,name,' . $area->id,
+          'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+      ]);
+
+      $data = $request->only(['name']);
+
+      if ($request->hasFile('urlFoto')) {
+          $file = $request->file('urlFoto');
+          $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
+          $file->storeAs('public/images', $nombreArchivo);
+          $data['urlFoto'] = $nombreArchivo;
+      }
+
+      $area->update($data);
+
+      return response()->json($area);
+  }
+
+  public function apiDestroy($id)
+  {
+      $area = Area::findOrFail($id);
+      $area->delete();
+      return response()->json(['message' => 'Área eliminada correctamente.']);
   }
 
    

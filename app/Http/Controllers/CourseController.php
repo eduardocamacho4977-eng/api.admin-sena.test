@@ -48,15 +48,25 @@ public function create(){
 }
 
 public function store(Request $request){
-    $course = Course::create($request->all());
-    //ADJUNTAR EL PDF
-         $file=$request->file("urlFoto");
+    $request->validate([
+        'course_number' => 'required|string|max:255',
+        'day' => 'nullable|string|max:255',
+        'area_id' => 'nullable|exists:areas,id',
+        'training_center_id' => 'nullable|exists:training_centers,id',
+        'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+    ]);
 
-         $nombreArchivo = "foto_".time().".".$file->guessExtension();
-         $request->file('urlFoto')->storeAs('public/images', $nombreArchivo );
+    $data = $request->only(['course_number', 'day', 'area_id', 'training_center_id']);
 
-         $course->urlFoto = $nombreArchivo;
-         $course->save();
+    if ($request->hasFile('urlFoto')) {
+        $file = $request->file('urlFoto');
+        $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
+        $file->storeAs('public/images', $nombreArchivo);
+        $data['urlFoto'] = $nombreArchivo;
+    }
+
+    Course::create($data);
+
     return redirect()->route('course.index')->with('success', 'Curso creado correctamente.');
 }
 
@@ -81,5 +91,72 @@ public function store(Request $request){
      return redirect()->route('course.index')->with('success','Curso eliminado.');
  }
 
-   
+ public function apiIndex()
+ {
+     return response()->json(Course::with(['area', 'trainingCenter'])->get());
+ }
+
+ public function apiShow($id)
+ {
+     return response()->json(Course::with(['area', 'trainingCenter'])->findOrFail($id));
+ }
+
+ public function apiStore(Request $request)
+ {
+     $request->validate([
+         'course_number' => 'required|string|max:255|unique:courses,course_number',
+         'day' => 'nullable|string|max:255',
+         'area_id' => 'nullable|exists:areas,id',
+         'training_center_id' => 'nullable|exists:training_centers,id',
+         'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+     ]);
+
+     $data = $request->only(['course_number', 'day', 'area_id', 'training_center_id']);
+
+     if ($request->hasFile('urlFoto')) {
+         $file = $request->file('urlFoto');
+         $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
+         $file->storeAs('public/images', $nombreArchivo);
+         $data['urlFoto'] = $nombreArchivo;
+     }
+
+     $course = Course::create($data);
+
+     return response()->json($course->load(['area', 'trainingCenter']), 201);
+ }
+
+ public function apiUpdate(Request $request, $id)
+ {
+     $course = Course::findOrFail($id);
+
+     $request->validate([
+         'course_number' => 'sometimes|required|string|max:255|unique:courses,course_number,' . $course->id,
+         'day' => 'nullable|string|max:255',
+         'area_id' => 'nullable|exists:areas,id',
+         'training_center_id' => 'nullable|exists:training_centers,id',
+         'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+     ]);
+
+     $data = $request->only(['course_number', 'day', 'area_id', 'training_center_id']);
+
+     if ($request->hasFile('urlFoto')) {
+         $file = $request->file('urlFoto');
+         $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
+         $file->storeAs('public/images', $nombreArchivo);
+         $data['urlFoto'] = $nombreArchivo;
+     }
+
+     $course->update($data);
+
+     return response()->json($course->fresh()->load(['area', 'trainingCenter']));
+ }
+
+ public function apiDestroy($id)
+ {
+     $course = Course::findOrFail($id);
+     $course->delete();
+
+     return response()->json(['message' => 'Curso eliminado correctamente.']);
+ }
+
 }

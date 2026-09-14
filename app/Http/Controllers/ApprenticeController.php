@@ -52,15 +52,24 @@ public function create(){
 }
 
 public function store(Request $request){
-    $apprentice = Apprentice::create($request->all());
-    //ADJUNTAR EL PDF
-         $file=$request->file("urlFoto");
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'nullable|email|max:255',
+        'course_id' => 'nullable|exists:courses,id',
+        'computer_id' => 'nullable|exists:computers,id',
+        'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+    ]);
 
-         $nombreArchivo = "foto_".time().".".$file->guessExtension();
-         $request->file('urlFoto')->storeAs('public/images', $nombreArchivo );
+    $data = $request->only(['name', 'email', 'cell_number', 'course_id', 'computer_id']);
 
-         $apprentice->urlFoto = $nombreArchivo;
-         $apprentice->save();
+    if ($request->hasFile('urlFoto')) {
+        $file = $request->file('urlFoto');
+        $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
+        $file->storeAs('public/images', $nombreArchivo);
+        $data['urlFoto'] = $nombreArchivo;
+    }
+
+    Apprentice::create($data);
 
     return redirect()->route('apprentice.index')->with('success', 'Aprendiz creado correctamente.');
 }
@@ -84,5 +93,74 @@ public function store(Request $request){
      return redirect()->route('apprentice.index')->with('success','Aprendiz eliminado.');
  }
 
+ public function apiIndex()
+ {
+     return response()->json(Apprentice::with(['course', 'computer'])->get());
+ }
+
+ public function apiShow($id)
+ {
+     return response()->json(Apprentice::with(['course', 'computer'])->findOrFail($id));
+ }
+
+ public function apiStore(Request $request)
+ {
+     $request->validate([
+         'name' => 'required|string|max:255',
+         'email' => 'nullable|email|max:255',
+         'cell_number' => 'nullable|string|max:255',
+         'course_id' => 'nullable|exists:courses,id',
+         'computer_id' => 'nullable|exists:computers,id',
+         'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+     ]);
+
+     $data = $request->only(['name', 'email', 'cell_number', 'course_id', 'computer_id']);
+
+     if ($request->hasFile('urlFoto')) {
+         $file = $request->file('urlFoto');
+         $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
+         $file->storeAs('public/images', $nombreArchivo);
+         $data['urlFoto'] = $nombreArchivo;
+     }
+
+     $apprentice = Apprentice::create($data);
+
+     return response()->json($apprentice->load(['course', 'computer']), 201);
+ }
+
+ public function apiUpdate(Request $request, $id)
+ {
+     $apprentice = Apprentice::findOrFail($id);
+
+     $request->validate([
+         'name' => 'sometimes|required|string|max:255',
+         'email' => 'nullable|email|max:255',
+         'cell_number' => 'nullable|string|max:255',
+         'course_id' => 'nullable|exists:courses,id',
+         'computer_id' => 'nullable|exists:computers,id',
+         'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+     ]);
+
+     $data = $request->only(['name', 'email', 'cell_number', 'course_id', 'computer_id']);
+
+     if ($request->hasFile('urlFoto')) {
+         $file = $request->file('urlFoto');
+         $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
+         $file->storeAs('public/images', $nombreArchivo);
+         $data['urlFoto'] = $nombreArchivo;
+     }
+
+     $apprentice->update($data);
+
+     return response()->json($apprentice->fresh()->load(['course', 'computer']));
+ }
+
+ public function apiDestroy($id)
+ {
+     $apprentice = Apprentice::findOrFail($id);
+     $apprentice->delete();
+
+     return response()->json(['message' => 'Aprendiz eliminado correctamente.']);
+ }
 
 }

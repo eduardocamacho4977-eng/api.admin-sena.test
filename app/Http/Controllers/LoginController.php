@@ -11,7 +11,7 @@ class LoginController extends Controller
 {
     public function showLogin()
     {
-        return view('login');
+        return view('vistas.login');
     }
 
     public function login(Request $request)
@@ -36,7 +36,7 @@ class LoginController extends Controller
     // Muestra el formulario de registro
     public function showRegister()
     {
-        return view('register');
+        return view('vistas.register');
     }
 
     // Procesa el registro de nuevos usuarios

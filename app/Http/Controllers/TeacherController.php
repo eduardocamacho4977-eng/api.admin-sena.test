@@ -49,15 +49,25 @@ public function create(){
 }
 
 public function store(Request $request){
-    $teacher = Teacher::create($request->all());
-    //ADJUNTAR EL PDF
-         $file=$request->file("urlFoto");
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'nullable|email|max:255',
+        'area_id' => 'nullable|exists:areas,id',
+        'training_center_id' => 'nullable|exists:training_centers,id',
+        'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+    ]);
 
-         $nombreArchivo = "foto_".time().".".$file->guessExtension();
-         $request->file('urlFoto')->storeAs('public/images', $nombreArchivo );
+    $data = $request->only(['name', 'email', 'area_id', 'training_center_id']);
 
-         $teacher->urlFoto = $nombreArchivo;
-         $teacher->save();
+    if ($request->hasFile('urlFoto')) {
+        $file = $request->file('urlFoto');
+        $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
+        $file->storeAs('public/images', $nombreArchivo);
+        $data['urlFoto'] = $nombreArchivo;
+    }
+
+    Teacher::create($data);
+
     return redirect()->route('teacher.index')->with('success', 'Profesor creado correctamente.');
 }
 
@@ -81,5 +91,72 @@ public function store(Request $request){
    return redirect()->route('teacher.index')->with('success','Profesor eliminado.');
  }
 
-  
+ public function apiIndex()
+ {
+     return response()->json(Teacher::with(['area', 'trainingCenter'])->get());
+ }
+
+ public function apiShow($id)
+ {
+     return response()->json(Teacher::with(['area', 'trainingCenter'])->findOrFail($id));
+ }
+
+ public function apiStore(Request $request)
+ {
+     $request->validate([
+         'name' => 'required|string|max:255',
+         'email' => 'nullable|email|max:255',
+         'area_id' => 'nullable|exists:areas,id',
+         'training_center_id' => 'nullable|exists:training_centers,id',
+         'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+     ]);
+
+     $data = $request->only(['name', 'email', 'area_id', 'training_center_id']);
+
+     if ($request->hasFile('urlFoto')) {
+         $file = $request->file('urlFoto');
+         $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
+         $file->storeAs('public/images', $nombreArchivo);
+         $data['urlFoto'] = $nombreArchivo;
+     }
+
+     $teacher = Teacher::create($data);
+
+     return response()->json($teacher->load(['area', 'trainingCenter']), 201);
+ }
+
+ public function apiUpdate(Request $request, $id)
+ {
+     $teacher = Teacher::findOrFail($id);
+
+     $request->validate([
+         'name' => 'sometimes|required|string|max:255',
+         'email' => 'nullable|email|max:255',
+         'area_id' => 'nullable|exists:areas,id',
+         'training_center_id' => 'nullable|exists:training_centers,id',
+         'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+     ]);
+
+     $data = $request->only(['name', 'email', 'area_id', 'training_center_id']);
+
+     if ($request->hasFile('urlFoto')) {
+         $file = $request->file('urlFoto');
+         $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
+         $file->storeAs('public/images', $nombreArchivo);
+         $data['urlFoto'] = $nombreArchivo;
+     }
+
+     $teacher->update($data);
+
+     return response()->json($teacher->fresh()->load(['area', 'trainingCenter']));
+ }
+
+ public function apiDestroy($id)
+ {
+     $teacher = Teacher::findOrFail($id);
+     $teacher->delete();
+
+     return response()->json(['message' => 'Profesor eliminado correctamente.']);
+ }
+
 }

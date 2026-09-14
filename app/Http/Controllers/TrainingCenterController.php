@@ -36,16 +36,23 @@ class TrainingCenterController extends Controller
 }
 
    public function store(Request $request){
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'location' => 'nullable|string|max:255',
+        'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+    ]);
 
-    $training_center = TrainingCenter::create($request->all());
-    //ADJUNTAR EL PDF
-         $file=$request->file("urlFoto");
+    $data = $request->only(['name', 'location']);
 
-         $nombreArchivo = "foto_".time().".".$file->guessExtension();
-         $request->file('urlFoto')->storeAs('public/images', $nombreArchivo );
+    if ($request->hasFile('urlFoto')) {
+        $file = $request->file('urlFoto');
+        $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
+        $file->storeAs('public/images', $nombreArchivo);
+        $data['urlFoto'] = $nombreArchivo;
+    }
 
-         $training_center->urlFoto = $nombreArchivo;
-         $training_center->save();
+    TrainingCenter::create($data);
+
     return redirect()->route('training_center.index')->with('success', 'Centro de formación creado correctamente.');
 }
 
@@ -66,6 +73,68 @@ class TrainingCenterController extends Controller
    return redirect()->route('training_center.index')->with('success','Centro eliminado.');
 }
 
+ public function apiIndex()
+ {
+     return response()->json(TrainingCenter::all());
+ }
 
-  
+ public function apiShow($id)
+ {
+     return response()->json(TrainingCenter::findOrFail($id));
+ }
+
+ public function apiStore(Request $request)
+ {
+     $request->validate([
+         'name' => 'required|string|max:255',
+         'location' => 'nullable|string|max:255',
+         'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+     ]);
+
+     $data = $request->only(['name', 'location']);
+
+     if ($request->hasFile('urlFoto')) {
+         $file = $request->file('urlFoto');
+         $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
+         $file->storeAs('public/images', $nombreArchivo);
+         $data['urlFoto'] = $nombreArchivo;
+     }
+
+     $trainingCenter = TrainingCenter::create($data);
+
+     return response()->json($trainingCenter, 201);
+ }
+
+ public function apiUpdate(Request $request, $id)
+ {
+     $trainingCenter = TrainingCenter::findOrFail($id);
+
+     $request->validate([
+         'name' => 'sometimes|required|string|max:255',
+         'location' => 'nullable|string|max:255',
+         'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+     ]);
+
+     $data = $request->only(['name', 'location']);
+
+     if ($request->hasFile('urlFoto')) {
+         $file = $request->file('urlFoto');
+         $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
+         $file->storeAs('public/images', $nombreArchivo);
+         $data['urlFoto'] = $nombreArchivo;
+     }
+
+     $trainingCenter->update($data);
+
+     return response()->json($trainingCenter->fresh());
+ }
+
+ public function apiDestroy($id)
+ {
+     $trainingCenter = TrainingCenter::findOrFail($id);
+     $trainingCenter->delete();
+
+     return response()->json(['message' => 'Centro de formación eliminado correctamente.']);
+ }
+
 }
