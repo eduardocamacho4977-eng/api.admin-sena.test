@@ -7,7 +7,7 @@ use App\Models\TrainingCenter;
 
 class TrainingCenterController extends Controller
 {
-
+/*
    public function index(Request $request){
       $search = trim($request->get('search'));
       $training_centers = TrainingCenter::query()
@@ -72,9 +72,10 @@ class TrainingCenterController extends Controller
    $training_center->delete();
    return redirect()->route('training_center.index')->with('success','Centro eliminado.');
 }
-
+*/
  public function apiIndex()
  {
+    
      return response()->json(TrainingCenter::all());
  }
 
@@ -88,19 +89,10 @@ class TrainingCenterController extends Controller
      $request->validate([
          'name' => 'required|string|max:255',
          'location' => 'nullable|string|max:255',
-         'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+         
      ]);
 
-     $data = $request->only(['name', 'location']);
-
-     if ($request->hasFile('urlFoto')) {
-         $file = $request->file('urlFoto');
-         $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
-         $file->storeAs('public/images', $nombreArchivo);
-         $data['urlFoto'] = $nombreArchivo;
-     }
-
-     $trainingCenter = TrainingCenter::create($data);
+     $trainingCenter = TrainingCenter::create($request->all());
 
      return response()->json($trainingCenter, 201);
  }
@@ -112,19 +104,10 @@ class TrainingCenterController extends Controller
      $request->validate([
          'name' => 'sometimes|required|string|max:255',
          'location' => 'nullable|string|max:255',
-         'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        
      ]);
 
-     $data = $request->only(['name', 'location']);
-
-     if ($request->hasFile('urlFoto')) {
-         $file = $request->file('urlFoto');
-         $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
-         $file->storeAs('public/images', $nombreArchivo);
-         $data['urlFoto'] = $nombreArchivo;
-     }
-
-     $trainingCenter->update($data);
+     $trainingCenter->update($request->all ());
 
      return response()->json($trainingCenter->fresh());
  }

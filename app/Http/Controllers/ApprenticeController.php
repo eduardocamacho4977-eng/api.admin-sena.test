@@ -9,7 +9,7 @@ use App\Models\Computer;
 
 class ApprenticeController extends Controller
 {
-
+/*
 public function index(Request $request){
       $search = trim($request->get('search'));
       $apprentices = Apprentice::query()
@@ -91,16 +91,19 @@ public function store(Request $request){
      $apprentice = Apprentice::findOrFail($id);
      $apprentice->delete();
      return redirect()->route('apprentice.index')->with('success','Aprendiz eliminado.');
- }
+ } */
 
  public function apiIndex()
  {
-     return response()->json(Apprentice::with(['course', 'computer'])->get());
+    $apprentices = Apprentice::all();
+     return response()->json($apprentices->load(['course', 'computer']));
  }
 
  public function apiShow($id)
  {
-     return response()->json(Apprentice::with(['course', 'computer'])->findOrFail($id));
+     $apprentices = Apprentice::findOrFail($id);
+     
+     return response()->json($apprentices->load(['course', 'computer']));
  }
 
  public function apiStore(Request $request)
@@ -111,22 +114,16 @@ public function store(Request $request){
          'cell_number' => 'nullable|string|max:255',
          'course_id' => 'nullable|exists:courses,id',
          'computer_id' => 'nullable|exists:computers,id',
-         'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+         
      ]);
 
-     $data = $request->only(['name', 'email', 'cell_number', 'course_id', 'computer_id']);
 
-     if ($request->hasFile('urlFoto')) {
-         $file = $request->file('urlFoto');
-         $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
-         $file->storeAs('public/images', $nombreArchivo);
-         $data['urlFoto'] = $nombreArchivo;
-     }
+     $apprentice = Apprentice::create($request->all ());
 
-     $apprentice = Apprentice::create($data);
-
-     return response()->json($apprentice->load(['course', 'computer']), 201);
+    return response()->json($apprentice->load(['course', 'computer']), 201);
  }
+
+
 
  public function apiUpdate(Request $request, $id)
  {
@@ -138,22 +135,15 @@ public function store(Request $request){
          'cell_number' => 'nullable|string|max:255',
          'course_id' => 'nullable|exists:courses,id',
          'computer_id' => 'nullable|exists:computers,id',
-         'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+       
      ]);
-
-     $data = $request->only(['name', 'email', 'cell_number', 'course_id', 'computer_id']);
-
-     if ($request->hasFile('urlFoto')) {
-         $file = $request->file('urlFoto');
-         $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
-         $file->storeAs('public/images', $nombreArchivo);
-         $data['urlFoto'] = $nombreArchivo;
-     }
-
-     $apprentice->update($data);
+ 
+     $apprentice->update($request->all());
 
      return response()->json($apprentice->fresh()->load(['course', 'computer']));
  }
+
+ 
 
  public function apiDestroy($id)
  {

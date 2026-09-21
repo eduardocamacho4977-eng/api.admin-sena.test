@@ -7,6 +7,7 @@ use App\Models\Computer;
 
 class ComputerController extends Controller
 {
+    /*
     public function index(Request $request){
     $search = trim($request->get('search'));
     $computers = Computer::query()
@@ -70,6 +71,7 @@ class ComputerController extends Controller
      $computer->delete();
      return redirect()->route('computer.index')->with('success','Computadora eliminada.');
 }
+     */
 
  public function apiIndex()
  {
@@ -86,19 +88,10 @@ class ComputerController extends Controller
      $request->validate([
          'number' => 'required|string|max:255',
          'brand' => 'nullable|string|max:255',
-         'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        
      ]);
 
-     $data = $request->only(['number', 'brand']);
-
-     if ($request->hasFile('urlFoto')) {
-         $file = $request->file('urlFoto');
-         $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
-         $file->storeAs('public/images', $nombreArchivo);
-         $data['urlFoto'] = $nombreArchivo;
-     }
-
-     $computer = Computer::create($data);
+     $computer = Computer::create($request ->all());
 
      return response()->json($computer, 201);
  }
@@ -110,19 +103,10 @@ class ComputerController extends Controller
      $request->validate([
          'number' => 'sometimes|required|string|max:255',
          'brand' => 'nullable|string|max:255',
-         'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        
      ]);
 
-     $data = $request->only(['number', 'brand']);
-
-     if ($request->hasFile('urlFoto')) {
-         $file = $request->file('urlFoto');
-         $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
-         $file->storeAs('public/images', $nombreArchivo);
-         $data['urlFoto'] = $nombreArchivo;
-     }
-
-     $computer->update($data);
+     $computer->update($request ->all());
 
      return response()->json($computer->fresh());
  }

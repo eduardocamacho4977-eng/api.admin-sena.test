@@ -9,7 +9,7 @@ use App\Models\TrainingCenter;
 
 class TeacherController extends Controller
 {
-
+/*
   public function index(Request $request){
       $search = trim($request->get('search'));
       $teachers = Teacher::query()
@@ -90,7 +90,7 @@ public function store(Request $request){
    $teacher->delete();
    return redirect()->route('teacher.index')->with('success','Profesor eliminado.');
  }
-
+*/
  public function apiIndex()
  {
      return response()->json(Teacher::with(['area', 'trainingCenter'])->get());
@@ -101,6 +101,8 @@ public function store(Request $request){
      return response()->json(Teacher::with(['area', 'trainingCenter'])->findOrFail($id));
  }
 
+
+ 
  public function apiStore(Request $request)
  {
      $request->validate([
@@ -108,23 +110,13 @@ public function store(Request $request){
          'email' => 'nullable|email|max:255',
          'area_id' => 'nullable|exists:areas,id',
          'training_center_id' => 'nullable|exists:training_centers,id',
-         'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+         
      ]);
 
-     $data = $request->only(['name', 'email', 'area_id', 'training_center_id']);
-
-     if ($request->hasFile('urlFoto')) {
-         $file = $request->file('urlFoto');
-         $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
-         $file->storeAs('public/images', $nombreArchivo);
-         $data['urlFoto'] = $nombreArchivo;
-     }
-
-     $teacher = Teacher::create($data);
+     $teacher = Teacher::create($request->all());
 
      return response()->json($teacher->load(['area', 'trainingCenter']), 201);
  }
-
  public function apiUpdate(Request $request, $id)
  {
      $teacher = Teacher::findOrFail($id);
@@ -134,19 +126,10 @@ public function store(Request $request){
          'email' => 'nullable|email|max:255',
          'area_id' => 'nullable|exists:areas,id',
          'training_center_id' => 'nullable|exists:training_centers,id',
-         'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+         
      ]);
 
-     $data = $request->only(['name', 'email', 'area_id', 'training_center_id']);
-
-     if ($request->hasFile('urlFoto')) {
-         $file = $request->file('urlFoto');
-         $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
-         $file->storeAs('public/images', $nombreArchivo);
-         $data['urlFoto'] = $nombreArchivo;
-     }
-
-     $teacher->update($data);
+     $teacher->update($request->all());
 
      return response()->json($teacher->fresh()->load(['area', 'trainingCenter']));
  }

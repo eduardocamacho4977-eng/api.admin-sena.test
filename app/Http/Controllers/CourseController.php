@@ -9,7 +9,7 @@ use App\Models\TrainingCenter;
 
 class CourseController extends Controller
 {
-
+/*
  public function index(Request $request){
       $search = trim($request->get('search'));
       $courses = Course::query()
@@ -90,6 +90,7 @@ public function store(Request $request){
      $course->delete();
      return redirect()->route('course.index')->with('success','Curso eliminado.');
  }
+     */
 
  public function apiIndex()
  {
@@ -108,19 +109,11 @@ public function store(Request $request){
          'day' => 'nullable|string|max:255',
          'area_id' => 'nullable|exists:areas,id',
          'training_center_id' => 'nullable|exists:training_centers,id',
-         'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+      
      ]);
 
-     $data = $request->only(['course_number', 'day', 'area_id', 'training_center_id']);
-
-     if ($request->hasFile('urlFoto')) {
-         $file = $request->file('urlFoto');
-         $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
-         $file->storeAs('public/images', $nombreArchivo);
-         $data['urlFoto'] = $nombreArchivo;
-     }
-
-     $course = Course::create($data);
+    
+     $course = Course::create($request->all());
 
      return response()->json($course->load(['area', 'trainingCenter']), 201);
  }
@@ -134,19 +127,10 @@ public function store(Request $request){
          'day' => 'nullable|string|max:255',
          'area_id' => 'nullable|exists:areas,id',
          'training_center_id' => 'nullable|exists:training_centers,id',
-         'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        
      ]);
 
-     $data = $request->only(['course_number', 'day', 'area_id', 'training_center_id']);
-
-     if ($request->hasFile('urlFoto')) {
-         $file = $request->file('urlFoto');
-         $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
-         $file->storeAs('public/images', $nombreArchivo);
-         $data['urlFoto'] = $nombreArchivo;
-     }
-
-     $course->update($data);
+     $course->update($request ->all());
 
      return response()->json($course->fresh()->load(['area', 'trainingCenter']));
  }

@@ -7,7 +7,7 @@ use App\Models\Area;
 
 class AreaController extends Controller
 {
-    public function index(Request $request){
+   /* public function index(Request $request){
       $search = trim($request->get('search'));
       $areas = Area::query()
           ->when($search, function ($query, $search) {
@@ -65,58 +65,43 @@ class AreaController extends Controller
     $area = Area::findOrFail($id);
     $area->delete();
     return redirect()->route('area.index')->with('success', 'Área eliminada.');
-  }
+  }*/
 
   public function apiIndex()
   {
-      return response()->json(Area::all());
+      $areas = Area::all();
+
+      return response()->json ($areas);
   }
+
 
   public function apiShow($id)
   {
+          $area = Area::findOrFail($id);
       return response()->json(Area::findOrFail($id));
   }
 
   public function apiStore(Request $request)
   {
       $request->validate([
-          'name' => 'required|string|max:255|unique:areas,name',
-          'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+         'name' => 'required|max:255',
+          
       ]);
 
-      $data = $request->only(['name']);
+      $area = Area::create($request->all());
 
-      if ($request->hasFile('urlFoto')) {
-          $file = $request->file('urlFoto');
-          $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
-          $file->storeAs('public/images', $nombreArchivo);
-          $data['urlFoto'] = $nombreArchivo;
-      }
-
-      $area = Area::create($data);
-
-      return response()->json($area, 201);
+      return response()->json($area);
   }
-
   public function apiUpdate(Request $request, $id)
   {
       $area = Area::findOrFail($id);
 
       $request->validate([
           'name' => 'sometimes|required|string|max:255|unique:areas,name,' . $area->id,
-          'urlFoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+          
       ]);
 
-      $data = $request->only(['name']);
-
-      if ($request->hasFile('urlFoto')) {
-          $file = $request->file('urlFoto');
-          $nombreArchivo = 'foto_' . time() . '.' . $file->getClientOriginalExtension();
-          $file->storeAs('public/images', $nombreArchivo);
-          $data['urlFoto'] = $nombreArchivo;
-      }
-
-      $area->update($data);
+      $area->update($request ->all());
 
       return response()->json($area);
   }
