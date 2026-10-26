@@ -14,7 +14,9 @@ class Apprentice extends Model
         'email',
         'cell_number',
         'course_id',
-        'computer_id'
+        'computer_id',
+        'imagen_url',
+        'imagen_public_id',
     ];
 
     protected $guarded =[

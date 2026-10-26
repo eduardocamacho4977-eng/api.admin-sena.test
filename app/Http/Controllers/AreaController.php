@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Area;
+use Cloudinary\Cloudinary;
 
 class AreaController extends Controller
 {
@@ -74,6 +75,66 @@ class AreaController extends Controller
       return response()->json ($areas);
   }
 
+  
+ /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+     
+    public function store(Request $request)
+    {
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'imagen' => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
+        ]);
+
+        $file = $request->file('imagen');
+
+        $cloudinary = new Cloudinary([
+            'cloud' => [
+                'cloud_name' => config('services.cloudinary.cloud_name'),
+                'api_key' => config('services.cloudinary.api_key'),
+                'api_secret' => config('services.cloudinary.api_secret'),
+            ],
+            'url' => ['secure' => true],
+        ]);
+
+        $resultado = $cloudinary->uploadApi()->upload(
+            $file->getRealPath(),
+            [
+                'folder' => 'categories',
+                'resource_type' => 'image',
+            ]
+        );
+
+        $area = Area::create([
+            'name' => $request->name,
+            'imagen_url' => $resultado['secure_url'],
+            'imagen_public_id' => $resultado['public_id'],
+        ]);
+
+        return response()->json([
+            'message' => 'area creada correctamente',
+            'data' => $area,
+        ], 201);
+    }
+
+    public function apiStore(Request $request)
+    {
+        return $this->store($request);
+    }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  \App\Models\Area  $area
+     * @return \Illuminate\Http\Response
+     */
+
+    
 
   public function apiShow($id)
   {
@@ -81,17 +142,7 @@ class AreaController extends Controller
       return response()->json(Area::findOrFail($id));
   }
 
-  public function apiStore(Request $request)
-  {
-      $request->validate([
-         'name' => 'required|max:255',
-          
-      ]);
-
-      $area = Area::create($request->all());
-
-      return response()->json($area);
-  }
+  
   public function apiUpdate(Request $request, $id)
   {
       $area = Area::findOrFail($id);

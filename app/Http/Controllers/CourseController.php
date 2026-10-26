@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Course;
 use App\Models\Area;
 use App\Models\TrainingCenter;
+use Cloudinary\Cloudinary;
 
 class CourseController extends Controller
 {
@@ -97,25 +98,67 @@ public function store(Request $request){
      return response()->json(Course::with(['area', 'trainingCenter'])->get());
  }
 
- public function apiShow($id)
- {
-     return response()->json(Course::with(['area', 'trainingCenter'])->findOrFail($id));
- }
-
- public function apiStore(Request $request)
+ /**
+  * Store a newly created resource in storage.
+  *
+  * @param  \Illuminate\Http\Request  $request
+  * @return \Illuminate\Http\Response
+  */
+ public function store(Request $request)
  {
      $request->validate([
          'course_number' => 'required|string|max:255|unique:courses,course_number',
          'day' => 'nullable|string|max:255',
          'area_id' => 'nullable|exists:areas,id',
          'training_center_id' => 'nullable|exists:training_centers,id',
-      
+         'imagen' => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
      ]);
 
-    
-     $course = Course::create($request->all());
+     $file = $request->file('imagen');
+
+     $cloudinary = new Cloudinary([
+         'cloud' => [
+             'cloud_name' => config('services.cloudinary.cloud_name'),
+             'api_key' => config('services.cloudinary.api_key'),
+             'api_secret' => config('services.cloudinary.api_secret'),
+         ],
+         'url' => ['secure' => true],
+     ]);
+
+     $resultado = $cloudinary->uploadApi()->upload(
+         $file->getRealPath(),
+         [
+             'folder' => 'courses',
+             'resource_type' => 'image',
+         ]
+     );
+
+     $course = Course::create([
+         'course_number' => $request->course_number,
+         'day' => $request->day,
+         'area_id' => $request->area_id,
+         'training_center_id' => $request->training_center_id,
+         'imagen_url' => $resultado['secure_url'],
+         'imagen_public_id' => $resultado['public_id'],
+     ]);
 
      return response()->json($course->load(['area', 'trainingCenter']), 201);
+ }
+
+ public function apiStore(Request $request)
+ {
+     return $this->store($request);
+ }
+
+ /**
+  * Display the specified resource.
+  *
+  * @param  \App\Models\Course  $course
+  * @return \Illuminate\Http\Response
+  */
+ public function apiShow($id)
+ {
+     return response()->json(Course::with(['area', 'trainingCenter'])->findOrFail($id));
  }
 
  public function apiUpdate(Request $request, $id)

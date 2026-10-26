@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Teacher;
 use App\Models\Area;
 use App\Models\TrainingCenter;
+use Cloudinary\Cloudinary;
 
 class TeacherController extends Controller
 {
@@ -96,27 +97,69 @@ public function store(Request $request){
      return response()->json(Teacher::with(['area', 'trainingCenter'])->get());
  }
 
- public function apiShow($id)
- {
-     return response()->json(Teacher::with(['area', 'trainingCenter'])->findOrFail($id));
- }
-
-
- 
- public function apiStore(Request $request)
+ /**
+  * Store a newly created resource in storage.
+  *
+  * @param  \Illuminate\Http\Request  $request
+  * @return \Illuminate\Http\Response
+  */
+ public function store(Request $request)
  {
      $request->validate([
          'name' => 'required|string|max:255',
          'email' => 'nullable|email|max:255',
          'area_id' => 'nullable|exists:areas,id',
          'training_center_id' => 'nullable|exists:training_centers,id',
-         
+         'imagen' => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
      ]);
 
-     $teacher = Teacher::create($request->all());
+     $file = $request->file('imagen');
+
+     $cloudinary = new Cloudinary([
+         'cloud' => [
+             'cloud_name' => config('services.cloudinary.cloud_name'),
+             'api_key' => config('services.cloudinary.api_key'),
+             'api_secret' => config('services.cloudinary.api_secret'),
+         ],
+         'url' => ['secure' => true],
+     ]);
+
+     $resultado = $cloudinary->uploadApi()->upload(
+         $file->getRealPath(),
+         [
+             'folder' => 'teachers',
+             'resource_type' => 'image',
+         ]
+     );
+
+     $teacher = Teacher::create([
+         'name' => $request->name,
+         'email' => $request->email,
+         'area_id' => $request->area_id,
+         'training_center_id' => $request->training_center_id,
+         'imagen_url' => $resultado['secure_url'],
+         'imagen_public_id' => $resultado['public_id'],
+     ]);
 
      return response()->json($teacher->load(['area', 'trainingCenter']), 201);
  }
+
+ public function apiStore(Request $request)
+ {
+     return $this->store($request);
+ }
+
+ /**
+  * Display the specified resource.
+  *
+  * @param  \App\Models\Teacher  $teacher
+  * @return \Illuminate\Http\Response
+  */
+ public function apiShow($id)
+ {
+     return response()->json(Teacher::with(['area', 'trainingCenter'])->findOrFail($id));
+ }
+
  public function apiUpdate(Request $request, $id)
  {
      $teacher = Teacher::findOrFail($id);

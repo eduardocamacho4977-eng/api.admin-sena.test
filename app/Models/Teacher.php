@@ -13,7 +13,9 @@ class Teacher extends Model
         'name',
         'email',
         'area_id',
-        'training_center_id'
+        'training_center_id',
+        'imagen_url',
+        'imagen_public_id',
     ];
 
     protected $guarded =[

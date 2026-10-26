@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Apprentice;
 use App\Models\Course;
 use App\Models\Computer;
+use Cloudinary\Cloudinary;
 
 class ApprenticeController extends Controller
 {
@@ -99,14 +100,13 @@ public function store(Request $request){
      return response()->json($apprentices->load(['course', 'computer']));
  }
 
- public function apiShow($id)
- {
-     $apprentices = Apprentice::findOrFail($id);
-     
-     return response()->json($apprentices->load(['course', 'computer']));
- }
-
- public function apiStore(Request $request)
+ /**
+  * Store a newly created resource in storage.
+  *
+  * @param  \Illuminate\Http\Request  $request
+  * @return \Illuminate\Http\Response
+  */
+ public function store(Request $request)
  {
      $request->validate([
          'name' => 'required|string|max:255',
@@ -114,16 +114,58 @@ public function store(Request $request){
          'cell_number' => 'nullable|string|max:255',
          'course_id' => 'nullable|exists:courses,id',
          'computer_id' => 'nullable|exists:computers,id',
-         
+         'imagen' => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
      ]);
 
+     $file = $request->file('imagen');
 
-     $apprentice = Apprentice::create($request->all ());
+     $cloudinary = new Cloudinary([
+         'cloud' => [
+             'cloud_name' => config('services.cloudinary.cloud_name'),
+             'api_key' => config('services.cloudinary.api_key'),
+             'api_secret' => config('services.cloudinary.api_secret'),
+         ],
+         'url' => ['secure' => true],
+     ]);
 
-    return response()->json($apprentice->load(['course', 'computer']), 201);
+     $resultado = $cloudinary->uploadApi()->upload(
+         $file->getRealPath(),
+         [
+             'folder' => 'apprentices',
+             'resource_type' => 'image',
+         ]
+     );
+
+     $apprentice = Apprentice::create([
+         'name' => $request->name,
+         'email' => $request->email,
+         'cell_number' => $request->cell_number,
+         'course_id' => $request->course_id,
+         'computer_id' => $request->computer_id,
+         'imagen_url' => $resultado['secure_url'],
+         'imagen_public_id' => $resultado['public_id'],
+     ]);
+
+     return response()->json($apprentice->load(['course', 'computer']), 201);
  }
 
+ public function apiStore(Request $request)
+ {
+     return $this->store($request);
+ }
 
+ /**
+  * Display the specified resource.
+  *
+  * @param  \App\Models\Apprentice  $apprentice
+  * @return \Illuminate\Http\Response
+  */
+ public function apiShow($id)
+ {
+     $apprentices = Apprentice::findOrFail($id);
+     
+     return response()->json($apprentices->load(['course', 'computer']));
+ }
 
  public function apiUpdate(Request $request, $id)
  {

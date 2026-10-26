@@ -11,7 +11,9 @@ class Computer extends Model
 
     protected $fillable = [
        'number',
-       'brand'
+       'brand',
+       'imagen_url',
+       'imagen_public_id',
     ];
 
     protected $guarded =[

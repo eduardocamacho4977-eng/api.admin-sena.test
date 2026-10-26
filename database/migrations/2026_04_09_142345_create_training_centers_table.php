@@ -16,7 +16,8 @@ return new class extends Migration
             //campos
             $table->string('name');
             $table->string('location');
-            $table->string('urlFoto')->nullable();
+            $table->string('imagen_url');
+            $table->string('imagen_public_id');
             $table->timestamps();
         });
     }

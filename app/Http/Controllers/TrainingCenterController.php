@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\TrainingCenter;
+use Cloudinary\Cloudinary;
 
 class TrainingCenterController extends Controller
 {
@@ -79,22 +80,63 @@ class TrainingCenterController extends Controller
      return response()->json(TrainingCenter::all());
  }
 
- public function apiShow($id)
- {
-     return response()->json(TrainingCenter::findOrFail($id));
- }
-
- public function apiStore(Request $request)
+ /**
+  * Store a newly created resource in storage.
+  *
+  * @param  \Illuminate\Http\Request  $request
+  * @return \Illuminate\Http\Response
+  */
+ public function store(Request $request)
  {
      $request->validate([
          'name' => 'required|string|max:255',
          'location' => 'nullable|string|max:255',
-         
+         'imagen' => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
      ]);
 
-     $trainingCenter = TrainingCenter::create($request->all());
+     $file = $request->file('imagen');
+
+     $cloudinary = new Cloudinary([
+         'cloud' => [
+             'cloud_name' => config('services.cloudinary.cloud_name'),
+             'api_key' => config('services.cloudinary.api_key'),
+             'api_secret' => config('services.cloudinary.api_secret'),
+         ],
+         'url' => ['secure' => true],
+     ]);
+
+     $resultado = $cloudinary->uploadApi()->upload(
+         $file->getRealPath(),
+         [
+             'folder' => 'training_centers',
+             'resource_type' => 'image',
+         ]
+     );
+
+     $trainingCenter = TrainingCenter::create([
+         'name' => $request->name,
+         'location' => $request->location,
+         'imagen_url' => $resultado['secure_url'],
+         'imagen_public_id' => $resultado['public_id'],
+     ]);
 
      return response()->json($trainingCenter, 201);
+ }
+
+ public function apiStore(Request $request)
+ {
+     return $this->store($request);
+ }
+
+ /**
+  * Display the specified resource.
+  *
+  * @param  \App\Models\TrainingCenter  $trainingCenter
+  * @return \Illuminate\Http\Response
+  */
+ public function apiShow($id)
+ {
+     return response()->json(TrainingCenter::findOrFail($id));
  }
 
  public function apiUpdate(Request $request, $id)

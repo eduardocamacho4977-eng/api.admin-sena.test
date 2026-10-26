@@ -17,7 +17,8 @@ return new class extends Migration
               //campos    
             $table->string('course_number',45);
             $table->string('day',45);
-            $table->string('urlFoto')->nullable();
+            $table->string('imagen_url');
+            $table->string('imagen_public_id');
 
             // llaves foraneas
             $table->unsignedBigInteger('area_id')->nullable();

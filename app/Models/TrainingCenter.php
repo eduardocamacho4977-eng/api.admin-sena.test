@@ -11,7 +11,9 @@ class TrainingCenter extends Model
 
     protected $fillable = [
          'name', 
-         'location'
+         'location',
+         'imagen_url',
+         'imagen_public_id',
     ];
 
     protected $guarded =[
